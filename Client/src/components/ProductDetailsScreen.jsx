@@ -2,11 +2,23 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getProductById, placeOrder } from "../services/product";
 import { toast } from "react-toastify";
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
 
 const ProductDetailsScreen = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [ordering, setOrdering] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [orderData, setOrderData] = useState({
+    customerName: "",
+    mobile: "",
+    address: "",
+  });
+
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [orderSummary, setOrderSummary] = useState(null);
 
   useEffect(() => {
     const loadProductDetails = async () => {
@@ -21,16 +33,28 @@ const ProductDetailsScreen = () => {
     loadProductDetails();
   }, [id]);
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
+    setShowModal(true);
+  };
+
+  const confirmOrder = async () => {
+    if (!orderData.address || !orderData.mobile) {
+      toast.warning("📌 Please provide both address and mobile number");
+      return;
+    }
+
     try {
       setOrdering(true);
-      const result = await placeOrder(product.id);
-      toast.success(`🎉 Order placed! Order ID: ${result.order_id}`);
+      const result = await placeOrder(product.id, orderData); // Send address & mobile
+      setOrderSummary(result);
+      setShowSuccess(true);
+      toast.dismiss(); // Close any previous toasts
     } catch (err) {
       console.error(err);
       toast.error("❌ Failed to place order. Please try again.");
     } finally {
       setOrdering(false);
+      setShowModal(false);
     }
   };
 
@@ -105,6 +129,79 @@ const ProductDetailsScreen = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal to take input */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Enter Delivery Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Full Name</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Optional"
+                value={orderData.customerName}
+                onChange={(e) =>
+                  setOrderData({ ...orderData, customerName: e.target.value })
+                }
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Mobile Number</Form.Label>
+              <Form.Control
+                type="tel"
+                placeholder="Required"
+                value={orderData.mobile}
+                onChange={(e) =>
+                  setOrderData({ ...orderData, mobile: e.target.value })
+                }
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Address</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Delivery Address"
+                value={orderData.address}
+                onChange={(e) =>
+                  setOrderData({ ...orderData, address: e.target.value })
+                }
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={confirmOrder}>
+            {ordering ? "Placing..." : "Confirm Order"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Success Modal */}
+      <Modal show={showSuccess} onHide={() => setShowSuccess(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>🎉 Order Placed Successfully!</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p><strong>Order ID:</strong> {orderSummary?.order_id}</p>
+          <p><strong>Product:</strong> {product?.name}</p>
+          <p><strong>Amount Paid:</strong> ₹{product?.price}</p>
+          <p><strong>Will be delivered to:</strong></p>
+          <p>{orderData.address}</p>
+          <p><strong>Contact:</strong> {orderData.mobile}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="success" onClick={() => setShowSuccess(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
