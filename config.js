@@ -1,0 +1,4 @@
+
+module.exports = {
+  SMART_MUNIMJI_SECRET_KEY: 'SMJ-8e2b3a90f14d417d9946e7588a54e1a4'
+};

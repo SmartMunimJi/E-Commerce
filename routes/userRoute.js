@@ -94,19 +94,32 @@ router.delete("/:id", (req, resp) => {
 })
 
 // PATCH /users/changepasswd
-router.patch("/changepasswd", (req,resp) => {
-    const {id, passwd} = req.body
-    const encPasswd = bcrypt.hashSync(passwd, 10)
-    db.query("UPDATE users SET passwd=? WHERE id=?", [encPasswd, id],
-        (err, result) => {
-            if(err)
-                return resp.send(apiError(err))
-            if(result.affectedRows !== 1)
-                return resp.send(apiError("User not found"))
-            resp.send(apiSuccess("User password updated"))
-        }
-    )
-})
+router.patch("/changepasswd", (req, resp) => {
+    const { id, passwd } = req.body || {};
+
+    // Validate input
+    if (!id || !passwd) {
+        return resp.status(400).send(apiError("Both 'id' and 'passwd' are required"));
+    }
+
+    try {
+        const encPasswd = bcrypt.hashSync(passwd, 10);
+
+        db.query(
+            "UPDATE users SET passwd=? WHERE id=?",
+            [encPasswd, id],
+            (err, result) => {
+                if (err) return resp.send(apiError(err));
+                if (result.affectedRows !== 1)
+                    return resp.send(apiError("User not found"));
+
+                resp.send(apiSuccess("User password updated"));
+            }
+        );
+    } catch (err) {
+        return resp.status(500).send(apiError("Password encryption failed"));
+    }
+});
 
 
 module.exports = router;

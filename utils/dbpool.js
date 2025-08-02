@@ -1,13 +1,15 @@
-
-const mysql = require("mysql2")
+const mysql = require("mysql2");
+require("dotenv").config(); // Load environment variables from .env file
 
 const pool = mysql.createPool({
-host: "localhost",
-port: 3306,
-user:"smartmunimji",
-password:"smartmunimji",
-database:"ecommerce_db"
+  host: process.env.DB_HOST || "nozomi.proxy.rlwy.net",
+  port: process.env.DB_PORT || 52235,
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASS || "xTCxfxxFWEjVgJWgKZirIqCIejkAWEWZ",
+  database: process.env.DB_NAME || "railway",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
-})
-
-module.exports = pool
+module.exports = pool;
